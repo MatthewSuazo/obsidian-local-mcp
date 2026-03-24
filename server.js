@@ -15,10 +15,10 @@ const OBSIDIAN_CLI =
     : process.platform === "darwin"
       ? "/Applications/Obsidian.app/Contents/MacOS/obsidian"
       : "obsidian");
-const DEFAULT_VAULT = process.env.OBSIDIAN_VAULT || "Matt's";
+const DEFAULT_VAULT = process.env.OBSIDIAN_VAULT;
 
 async function runObsidian(args) {
-  const fullArgs = [`vault=${DEFAULT_VAULT}`, ...args];
+  const fullArgs = DEFAULT_VAULT ? [`vault=${DEFAULT_VAULT}`, ...args] : args;
   try {
     const { stdout, stderr } = await execFileAsync(OBSIDIAN_CLI, fullArgs, {
       timeout: 15000,
@@ -240,6 +240,58 @@ server.tool(
     const args = ["daily:append", `content=${content}`];
     if (inline) args.push("inline");
     const result = await runObsidian(args);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- replace ---
+server.tool(
+  "replace",
+  "Find and replace text inside an Obsidian note using eval with app.vault.read/modify",
+  {
+    search: z.string().describe("Text or regex pattern to find"),
+    replace: z.string().describe("Replacement text"),
+    file: z.string().optional().describe("File name (wikilink-style resolution)"),
+    path: z.string().optional().describe("Exact file path (e.g. folder/note.md)"),
+    regex: z.boolean().optional().describe("Treat search as a regex pattern"),
+    replace_all: z.boolean().optional().describe("Replace all occurrences (default: first only)"),
+  },
+  async ({ search, replace, file, path, regex, replace_all }) => {
+    const fileRef = file
+      ? `app.metadataCache.getFirstLinkpathDest("${file.replace(/"/g, '\\"')}", "")`
+      : path
+        ? `app.vault.getAbstractFileByPath("${path.replace(/"/g, '\\"')}")`
+        : null;
+    if (!fileRef) {
+      throw new Error("Either file or path must be provided");
+    }
+
+    const escapeForJS = (s) =>
+      s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+    const escapedSearch = escapeForJS(search);
+    const escapedReplace = escapeForJS(replace);
+
+    let replaceExpr;
+    if (regex) {
+      const flags = replace_all ? "g" : "";
+      replaceExpr = `content.replace(new RegExp("${escapedSearch}", "${flags}"), "${escapedReplace}")`;
+    } else if (replace_all) {
+      replaceExpr = `content.replaceAll("${escapedSearch}", "${escapedReplace}")`;
+    } else {
+      replaceExpr = `content.replace("${escapedSearch}", "${escapedReplace}")`;
+    }
+
+    const code = [
+      `const f = ${fileRef};`,
+      `if (!f) throw new Error("File not found");`,
+      `const content = await app.vault.read(f);`,
+      `const updated = ${replaceExpr};`,
+      `if (content === updated) return "No matches found";`,
+      `await app.vault.modify(f, updated);`,
+      `return "Replaced successfully";`,
+    ].join(" ");
+
+    const result = await runObsidian(["eval", `code=${code}`]);
     return { content: [{ type: "text", text: result }] };
   }
 );
