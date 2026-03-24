@@ -1,0 +1,16 @@
+{
+  "name": "obsidian-local-mcp",
+  "version": "1.0.0",
+  "description": "MCP server wrapping the Obsidian CLI for vault management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["obsidian", "mcp", "model-context-protocol", "cli"],
+  "author": "MatthewSuazo",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1"
+  }
+}
