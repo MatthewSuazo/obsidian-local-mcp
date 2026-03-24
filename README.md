@@ -52,6 +52,13 @@ Set `OBSIDIAN_VAULT` to the name of the vault you want to target. Set `OBSIDIAN_
 | `daily_read` | Read today's daily note |
 | `daily_append` | Append to today's daily note |
 | `replace` | Find and replace text in a note (exact, regex, replace-all) |
+| `search_context` | Context-aware search returning surrounding content |
+| `files` | List files in the vault or a specific folder |
+| `folders` | List folders in the vault |
+| `open` | Open a file in the Obsidian UI |
+| `eval` | Execute JavaScript inside the Obsidian runtime |
+| `command` | Execute any registered Obsidian command by ID |
+| `insert_after` | Insert content after a matched string in a note |
 
 ## License
 
