@@ -1,6 +1,6 @@
 # obsidian-local-mcp
 
-A local [MCP](https://modelcontextprotocol.io) server that wraps the [Obsidian CLI](https://help.obsidian.md/cli), giving AI assistants like Claude direct access to your Obsidian vault.
+A local [MCP](https://modelcontextprotocol.io) server that wraps the [Obsidian CLI](https://help.obsidian.md/cli), giving AI assistants like Claude direct access to your Obsidian vault. Allows editing in the middle of docs.
 
 ## Requirements
 
