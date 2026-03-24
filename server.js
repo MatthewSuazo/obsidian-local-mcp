@@ -8,7 +8,13 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-const OBSIDIAN_CLI = "/Applications/Obsidian.app/Contents/MacOS/obsidian";
+const OBSIDIAN_CLI =
+  process.env.OBSIDIAN_CLI_PATH ||
+  (process.platform === "win32"
+    ? `${process.env.LOCALAPPDATA}\\Obsidian\\Obsidian.exe`
+    : process.platform === "darwin"
+      ? "/Applications/Obsidian.app/Contents/MacOS/obsidian"
+      : "obsidian");
 const DEFAULT_VAULT = process.env.OBSIDIAN_VAULT || "Matt's";
 
 async function runObsidian(args) {

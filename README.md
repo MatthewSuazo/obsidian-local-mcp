@@ -6,7 +6,7 @@ A local [MCP](https://modelcontextprotocol.io) server that wraps the [Obsidian C
 
 - **Obsidian** desktop app installed (v1.8+ with CLI support)
 - **Node.js** 18+
-- macOS (uses `/Applications/Obsidian.app/Contents/MacOS/obsidian`)
+- macOS, Windows, or Linux
 
 ## Setup
 
@@ -34,7 +34,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-Set `OBSIDIAN_VAULT` to the name of the vault you want to target.
+Set `OBSIDIAN_VAULT` to the name of the vault you want to target. Set `OBSIDIAN_CLI_PATH` to override the Obsidian binary location if it's not in the default path for your OS.
 
 ## Tools
 
