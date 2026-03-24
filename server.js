@@ -288,6 +288,137 @@ server.tool(
   }
 );
 
+// --- search_context ---
+server.tool(
+  "search_context",
+  "Context-aware search that returns surrounding content, not just matching lines",
+  {
+    query: z.string().describe("Search query text"),
+    limit: z.number().optional().default(5).describe("Max results to return (default 5)"),
+    path: z.string().optional().describe("Limit search to folder"),
+  },
+  async ({ query, limit, path }) => {
+    const args = ["search:context", `query=${query}`];
+    if (limit) args.push(`limit=${limit}`);
+    if (path) args.push(`path=${path}`);
+    const result = await runObsidian(args);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- files ---
+server.tool(
+  "files",
+  "List files in the vault or a specific folder",
+  {
+    folder: z.string().optional().describe("Folder to list"),
+    ext: z.string().optional().describe("Filter by extension (e.g. 'md')"),
+    total: z.boolean().optional().describe("Return count only"),
+  },
+  async ({ folder, ext, total }) => {
+    const args = ["files"];
+    if (folder) args.push(`folder=${folder}`);
+    if (ext) args.push(`ext=${ext}`);
+    if (total) args.push("total");
+    const result = await runObsidian(args);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- folders ---
+server.tool(
+  "folders",
+  "List folders in the vault",
+  {
+    folder: z.string().optional().describe("Filter by parent folder"),
+    total: z.boolean().optional().describe("Return count only"),
+  },
+  async ({ folder, total }) => {
+    const args = ["folders"];
+    if (folder) args.push(`folder=${folder}`);
+    if (total) args.push("total");
+    const result = await runObsidian(args);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- open ---
+server.tool(
+  "open",
+  "Open a file in the Obsidian UI",
+  {
+    file: z.string().optional().describe("File name (wikilink-style resolution)"),
+    path: z.string().optional().describe("Exact file path"),
+    newtab: z.boolean().optional().describe("Open in a new tab"),
+  },
+  async ({ file, path, newtab }) => {
+    const args = ["open"];
+    if (file) args.push(`file=${file}`);
+    if (path) args.push(`path=${path}`);
+    if (newtab) args.push("newtab");
+    const result = await runObsidian(args);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- eval ---
+server.tool(
+  "eval",
+  "Execute JavaScript inside the Obsidian runtime (Dataview queries, Templater, vault API)",
+  {
+    code: z.string().describe("JavaScript code to execute"),
+  },
+  async ({ code }) => {
+    const result = await runObsidian(["eval", `code=${code}`]);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- command ---
+server.tool(
+  "command",
+  "Execute any registered Obsidian command by ID (Templater, community plugins, etc.)",
+  {
+    id: z.string().describe("Command ID to execute"),
+  },
+  async ({ id }) => {
+    const result = await runObsidian(["command", `id=${id}`]);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
+// --- insert_after ---
+server.tool(
+  "insert_after",
+  "Insert content after a matched string in a note without replacing it",
+  {
+    file: z.string().optional().describe("File name (wikilink-style resolution)"),
+    path: z.string().optional().describe("Exact file path (e.g. folder/note.md)"),
+    after: z.string().describe("Text to match — content will be inserted after this"),
+    content: z.string().describe("Content to insert after the match"),
+  },
+  async ({ file, path, after, content }) => {
+    const fileRef = file
+      ? `app.metadataCache.getFirstLinkpathDest("${file.replace(/"/g, '\\"')}", "")`
+      : path
+        ? `app.vault.getAbstractFileByPath("${path.replace(/"/g, '\\"')}")`
+        : null;
+    if (!fileRef) {
+      throw new Error("Either file or path must be provided");
+    }
+
+    const escapeForJS = (s) =>
+      s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+    const escapedAfter = escapeForJS(after);
+    const escapedContent = escapeForJS(content);
+
+    const code = `(async () => { const f = ${fileRef}; if (!f) throw new Error("File not found"); const body = await app.vault.read(f); const idx = body.indexOf("${escapedAfter}"); if (idx === -1) return "No match found for the specified text"; const insertPos = idx + "${escapedAfter}".length; const updated = body.slice(0, insertPos) + "${escapedContent}" + body.slice(insertPos); await app.vault.modify(f, updated); return "Inserted successfully"; })()`;
+
+    const result = await runObsidian(["eval", `code=${code}`]);
+    return { content: [{ type: "text", text: result }] };
+  }
+);
+
 // --- start ---
 const transport = new StdioServerTransport();
 await server.connect(transport);
