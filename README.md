@@ -51,6 +51,7 @@ Set `OBSIDIAN_VAULT` to the name of the vault you want to target. Set `OBSIDIAN_
 | `property_read` | Read a frontmatter property |
 | `daily_read` | Read today's daily note |
 | `daily_append` | Append to today's daily note |
+| `replace` | Find and replace text in a note (exact, regex, replace-all) |
 
 ## License
 

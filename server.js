@@ -281,15 +281,7 @@ server.tool(
       replaceExpr = `content.replace("${escapedSearch}", "${escapedReplace}")`;
     }
 
-    const code = [
-      `const f = ${fileRef};`,
-      `if (!f) throw new Error("File not found");`,
-      `const content = await app.vault.read(f);`,
-      `const updated = ${replaceExpr};`,
-      `if (content === updated) return "No matches found";`,
-      `await app.vault.modify(f, updated);`,
-      `return "Replaced successfully";`,
-    ].join(" ");
+    const code = `(async () => { const f = ${fileRef}; if (!f) throw new Error("File not found"); const content = await app.vault.read(f); const updated = ${replaceExpr}; if (content === updated) return "No matches found"; await app.vault.modify(f, updated); return "Replaced successfully"; })()`;
 
     const result = await runObsidian(["eval", `code=${code}`]);
     return { content: [{ type: "text", text: result }] };
